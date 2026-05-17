@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react"
 import { parseCookies } from "nookies"
 import { performTokenRefresh } from "@/lib/authRefresh"
 import { redirectToSignIn } from "@/lib/http"
-import { clearAuth, fetchUserProfile } from "@/store/authSlice"
+import { clearAuth, setAuthLoading, setSessionActive } from "@/store/authSlice"
 import { useAppDispatch, useAppSelector } from "@/store/hooks"
 
 function getTokenExpiry(token: string): number | null {
@@ -62,6 +62,8 @@ export default function AuthInitializer({ children }: { children: React.ReactNod
         return
       }
 
+      dispatch(setAuthLoading(true))
+
       const accessExpired =
         !accessToken ||
         (() => {
@@ -79,12 +81,12 @@ export default function AuthInitializer({ children }: { children: React.ReactNod
           redirectToSignIn()
           return
         }
-        dispatch(fetchUserProfile())
+        dispatch(setSessionActive())
         scheduleProactiveRefresh(body.accessToken)
         return
       }
 
-      dispatch(fetchUserProfile())
+      dispatch(setSessionActive())
       scheduleProactiveRefresh(accessToken)
     }
 

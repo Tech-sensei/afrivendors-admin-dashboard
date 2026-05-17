@@ -2,7 +2,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { destroyCookie, setCookie } from "nookies"
 import { toast } from "sonner"
 import http, { redirectToSignIn } from "@/lib/http"
-import { clearAuth, fetchUserProfile } from "@/store/authSlice"
+import { adminLoginToProfile } from "@/lib/adminAuthProfile"
+import { clearAuth, setProfile } from "@/store/authSlice"
 import { useAppDispatch } from "@/store/hooks"
 import type { AdminLoginResponse, SignInPayload } from "@/types/auth"
 import {
@@ -32,7 +33,7 @@ export const useAuthAPI = () => {
       if (data?.refreshToken) {
         setCookie(null, "refreshToken", data.refreshToken, { maxAge: 20 * 60 * 60, path: "/" })
       }
-      dispatch(fetchUserProfile())
+      dispatch(setProfile(adminLoginToProfile(data)))
       toast.success("Welcome back!")
     },
     onError: (error: any) => {
