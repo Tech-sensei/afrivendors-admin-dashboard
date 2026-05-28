@@ -10,10 +10,9 @@ export const adminSectionIds = [
   "payouts",
   "reviews",
   "rfs",
-  "services",
+  "categories",
   "disputes",
   "analytics",
-  "cms",
   "settings",
   "notifications",
   "admin-accounts",
@@ -75,9 +74,9 @@ export const adminSectionCopy: Record<
     title: "RFS Requests",
     description: "Handle request-for-service workflows.",
   },
-  services: {
-    title: "Services Management",
-    description: "Manage platform services, categories, and the service catalog.",
+  categories: {
+    title: "Category Management",
+    description: "Manage platform categories. Vendors create and manage services within these categories.",
   },
   disputes: {
     title: "Disputes & Support",
@@ -86,10 +85,6 @@ export const adminSectionCopy: Record<
   analytics: {
     title: "Analytics & Reports",
     description: "Insights, exports, and reporting tools.",
-  },
-  cms: {
-    title: "Content Management",
-    description: "Edit static content, pages, and CMS entries.",
   },
   settings: {
     title: "Settings",

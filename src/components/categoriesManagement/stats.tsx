@@ -1,26 +1,24 @@
-import { Building2, Package, Tag, TrendingUp } from "lucide-react"
+import { Building2, Package, Tag } from "lucide-react"
 
-export function ServicesStats({
-  totalServices,
-  activeServices,
+export function CategoryStats({
   totalCategories,
   activeCategories,
+  inactiveCategories,
   totalVendors,
-  totalBookings,
+  vendorServicesCount,
 }: {
-  totalServices: number
-  activeServices: number
   totalCategories: number
   activeCategories: number
+  inactiveCategories: number
   totalVendors: number
-  totalBookings: number
+  vendorServicesCount: number
 }) {
   return (
     <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-      <Card icon={Package} tone="primary" label="Total Services" value={String(totalServices)} sub={`${activeServices} active`} />
-      <Card icon={Tag} tone="info" label="Categories" value={String(totalCategories)} sub={`${activeCategories} active`} />
+      <Card icon={Tag} tone="primary" label="Total Categories" value={String(totalCategories)} sub={`${activeCategories} active`} />
+      <Card icon={Package} tone="info" label="Vendor Services" value={String(vendorServicesCount)} sub="Listed under categories" />
       <Card icon={Building2} tone="success" label="Total Vendors" value={String(totalVendors)} sub="Across all categories" />
-      <Card icon={TrendingUp} tone="warning" label="Total Bookings" value={String(totalBookings)} sub="All time" />
+      <Card icon={Tag} tone="warning" label="Inactive Categories" value={String(inactiveCategories)} sub="Not available for new listings" />
     </section>
   )
 }

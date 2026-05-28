@@ -1,5 +1,5 @@
-import { ServicesManagement } from "@/components/servicesManagement/services-management"
+import { redirect } from "next/navigation"
 
 export default function ServicesPage() {
-  return <ServicesManagement />
+  redirect("/categories")
 }
