@@ -47,3 +47,9 @@ export interface AdminAuthRefreshResponse {
   accessToken: string
   refreshToken?: string
 }
+
+export interface ChangePasswordPayload {
+  oldPassword: string
+  newPassword: string
+  confirmNewPassword: string
+}

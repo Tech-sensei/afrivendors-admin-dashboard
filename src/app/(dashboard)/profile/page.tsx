@@ -1,5 +1,5 @@
-import { AdminSectionPage } from "@/components/dashboardLayout/admin-section-page"
+import { redirect } from "next/navigation"
 
 export default function ProfilePage() {
-  return <AdminSectionPage sectionId="profile" />
+  redirect("/settings")
 }

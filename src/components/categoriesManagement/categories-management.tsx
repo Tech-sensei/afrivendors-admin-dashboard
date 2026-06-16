@@ -4,89 +4,86 @@ import { ChevronLeft, ChevronRight, Plus, Search } from "lucide-react"
 import { useMemo, useState } from "react"
 import { toast } from "sonner"
 import type { CategoryItem } from "./data"
-import { initialCategories } from "./data"
-import { CategoryDetailsDrawer, CategoryFormDrawer, DeactivateCategoryModal } from "./drawers"
+import { CategoryDetailsDrawer, CategoryFormDrawer } from "./drawers"
 import { CategoryStats } from "./stats"
 import { CategoriesTable } from "./table"
+import {
+  useAdminCategoriesList,
+  useAdminCategoryDetail,
+  useAdminCreateCategory,
+  useAdminUpdateCategory,
+} from "@/services/useAdminCategories"
 
 const ITEMS_PER_PAGE = 10
 
+function getApiErrorMessage(error: unknown, fallback: string) {
+  if (error && typeof error === "object" && "response" in error) {
+    const res = (error as { response?: { data?: { message?: string; responseMessage?: string } } }).response?.data
+    return res?.responseMessage || res?.message || fallback
+  }
+  if (error instanceof Error && error.message) return error.message
+  return fallback
+}
+
 export function CategoryManagement() {
   const [searchQuery, setSearchQuery] = useState("")
-  const [filterStatus, setFilterStatus] = useState("all")
-  const [categories, setCategories] = useState(initialCategories)
-  const [selectedCategory, setSelectedCategory] = useState<CategoryItem | null>(null)
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
   const [categoryDrawerOpen, setCategoryDrawerOpen] = useState(false)
   const [addCategoryDrawerOpen, setAddCategoryDrawerOpen] = useState(false)
   const [editCategoryDrawerOpen, setEditCategoryDrawerOpen] = useState(false)
-  const [deactivateCategoryModalOpen, setDeactivateCategoryModalOpen] = useState(false)
-  const [categoryToToggle, setCategoryToToggle] = useState<CategoryItem | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
 
+  const { data: categories = [], isLoading, isError, error } = useAdminCategoriesList()
+  const { data: categoryDetail, isLoading: detailLoading } = useAdminCategoryDetail(
+    selectedCategoryId,
+    categoryDrawerOpen && selectedCategoryId != null,
+  )
+  const createCategory = useAdminCreateCategory()
+  const updateCategory = useAdminUpdateCategory()
+
   const totalCategories = categories.length
-  const activeCategories = categories.filter((c) => c.status === "Active").length
-  const inactiveCategories = categories.filter((c) => c.status === "Inactive").length
   const totalVendors = categories.reduce((sum, c) => sum + c.vendorCount, 0)
-  const vendorServicesCount = categories.reduce((sum, c) => sum + c.serviceCount, 0)
+  const categoriesWithIcons = categories.filter((c) => c.iconName).length
 
   const filteredCategories = useMemo(() => {
-    return categories.filter((category) => {
-      const q = searchQuery.toLowerCase()
-      const matchesSearch =
-        category.name.toLowerCase().includes(q) || category.description.toLowerCase().includes(q)
-      const matchesStatus = filterStatus === "all" || category.status.toLowerCase() === filterStatus
-      return matchesSearch && matchesStatus
-    })
-  }, [categories, searchQuery, filterStatus])
+    const q = searchQuery.toLowerCase().trim()
+    if (!q) return categories
+    return categories.filter(
+      (category) =>
+        category.name.toLowerCase().includes(q) ||
+        String(category.id).includes(q) ||
+        (category.iconName ?? "").toLowerCase().includes(q),
+    )
+  }, [categories, searchQuery])
 
   const totalPages = Math.max(1, Math.ceil(filteredCategories.length / ITEMS_PER_PAGE))
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
   const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, filteredCategories.length)
   const paginatedCategories = filteredCategories.slice(startIndex, endIndex)
 
-  const handleSaveCategory = (data: { name: string; description: string }) => {
-    const today = new Date().toISOString().split("T")[0]
-    if (editCategoryDrawerOpen && selectedCategory) {
-      setCategories((prev) =>
-        prev.map((c) => (c.id === selectedCategory.id ? { ...c, ...data, lastUpdated: today } : c)),
-      )
-      toast.success(`Category "${data.name}" updated successfully`)
-      setEditCategoryDrawerOpen(false)
-    } else {
-      const newCategory: CategoryItem = {
-        id: `CAT-${String(categories.length + 1).padStart(3, "0")}`,
-        ...data,
-        serviceCount: 0,
-        vendorCount: 0,
-        status: "Active",
-        createdDate: today,
-        lastUpdated: today,
+  const selectedCategory =
+    editCategoryDrawerOpen
+      ? categories.find((c) => c.id === selectedCategoryId) ?? null
+      : categoryDetail ?? categories.find((c) => c.id === selectedCategoryId) ?? null
+
+  const handleSaveCategory = async (data: { name: string; iconName: string }) => {
+    try {
+      if (editCategoryDrawerOpen && selectedCategoryId != null) {
+        await updateCategory.mutateAsync({ id: selectedCategoryId, payload: data })
+        toast.success(`Category "${data.name}" updated successfully`)
+        setEditCategoryDrawerOpen(false)
+      } else {
+        await createCategory.mutateAsync(data)
+        toast.success(`Category "${data.name}" created successfully`)
+        setAddCategoryDrawerOpen(false)
       }
-      setCategories((prev) => [newCategory, ...prev])
-      toast.success(`Category "${data.name}" created successfully`)
-      setAddCategoryDrawerOpen(false)
+      setSelectedCategoryId(null)
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, "Failed to save category"))
     }
-    setSelectedCategory(null)
   }
 
-  const handleOpenToggleConfirmation = (category: CategoryItem) => {
-    setCategoryToToggle(category)
-    if (category.status === "Active") setDeactivateCategoryModalOpen(true)
-    else handleConfirmToggleCategory(category)
-  }
-
-  const handleConfirmToggleCategory = (target?: CategoryItem) => {
-    const category = target ?? categoryToToggle
-    if (!category) return
-    const newStatus = category.status === "Active" ? "Inactive" : "Active"
-    const today = new Date().toISOString().split("T")[0]
-    setCategories((prev) =>
-      prev.map((c) => (c.id === category.id ? { ...c, status: newStatus, lastUpdated: today } : c)),
-    )
-    toast.success(`Category "${category.name}" ${newStatus === "Active" ? "activated" : "deactivated"} successfully`)
-    setDeactivateCategoryModalOpen(false)
-    setCategoryToToggle(null)
-  }
+  const isSaving = createCategory.isPending || updateCategory.isPending
 
   return (
     <div className="space-y-6">
@@ -99,10 +96,8 @@ export function CategoryManagement() {
 
       <CategoryStats
         totalCategories={totalCategories}
-        activeCategories={activeCategories}
-        inactiveCategories={inactiveCategories}
         totalVendors={totalVendors}
-        vendorServicesCount={vendorServicesCount}
+        categoriesWithIcons={categoriesWithIcons}
       />
 
       <section className="rounded-xl border border-border bg-white p-4 shadow-sm">
@@ -120,18 +115,6 @@ export function CategoryManagement() {
               className="w-full rounded-lg border border-border bg-white py-3 pl-10 pr-4 font-unageo text-sm text-secondary-000 outline-none focus:border-primary-100"
             />
           </div>
-          <select
-            value={filterStatus}
-            onChange={(e) => {
-              setFilterStatus(e.target.value)
-              setCurrentPage(1)
-            }}
-            className="rounded-lg border border-border bg-white px-3 py-3 font-unageo text-sm text-secondary-000 outline-none"
-          >
-            <option value="all">All Status</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-          </select>
           <button
             type="button"
             onClick={() => setAddCategoryDrawerOpen(true)}
@@ -143,25 +126,32 @@ export function CategoryManagement() {
         </div>
       </section>
 
+      {isError ? (
+        <section className="rounded-xl border border-destructive/30 bg-destructive/5 p-4">
+          <p className="font-unageo text-sm text-destructive">
+            {getApiErrorMessage(error, "Failed to load categories")}
+          </p>
+        </section>
+      ) : null}
+
       <CategoriesTable
         categories={paginatedCategories}
+        isLoading={isLoading}
         onView={(category) => {
-          setSelectedCategory(category)
+          setSelectedCategoryId(category.id)
           setCategoryDrawerOpen(true)
         }}
         onEdit={(category) => {
-          setSelectedCategory(category)
+          setSelectedCategoryId(category.id)
           setCategoryDrawerOpen(false)
           setEditCategoryDrawerOpen(true)
         }}
-        onToggleStatus={handleOpenToggleConfirmation}
       />
 
-      {totalPages > 1 ? (
+      {filteredCategories.length > 0 && totalPages > 1 ? (
         <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
           <p className="font-unageo text-sm text-accent-70">
-            Showing {filteredCategories.length === 0 ? 0 : startIndex + 1} to {endIndex} of {filteredCategories.length}{" "}
-            categories
+            Showing {startIndex + 1} to {endIndex} of {filteredCategories.length} categories
           </p>
           <div className="flex items-center gap-2">
             <button
@@ -198,43 +188,33 @@ export function CategoryManagement() {
         </div>
       ) : null}
 
-      {categoryDrawerOpen && selectedCategory ? (
+      {categoryDrawerOpen && selectedCategoryId != null ? (
         <CategoryDetailsDrawer
-          category={selectedCategory}
+          category={categoryDetail ?? categories.find((c) => c.id === selectedCategoryId) ?? null}
+          isLoading={detailLoading && !categoryDetail}
           onClose={() => {
             setCategoryDrawerOpen(false)
-            setSelectedCategory(null)
+            setSelectedCategoryId(null)
           }}
           onEdit={(category) => {
-            setSelectedCategory(category)
+            setSelectedCategoryId(category.id)
             setCategoryDrawerOpen(false)
             setEditCategoryDrawerOpen(true)
           }}
-          onToggleStatus={handleOpenToggleConfirmation}
         />
       ) : null}
 
       {(addCategoryDrawerOpen || editCategoryDrawerOpen) ? (
         <CategoryFormDrawer
           category={editCategoryDrawerOpen ? selectedCategory : null}
+          isSaving={isSaving}
           onClose={() => {
             setAddCategoryDrawerOpen(false)
             setEditCategoryDrawerOpen(false)
-            setSelectedCategory(null)
+            setSelectedCategoryId(null)
           }}
           onSave={handleSaveCategory}
           isEdit={editCategoryDrawerOpen}
-        />
-      ) : null}
-
-      {deactivateCategoryModalOpen && categoryToToggle ? (
-        <DeactivateCategoryModal
-          category={categoryToToggle}
-          onClose={() => {
-            setDeactivateCategoryModalOpen(false)
-            setCategoryToToggle(null)
-          }}
-          onConfirm={() => handleConfirmToggleCategory()}
         />
       ) : null}
     </div>

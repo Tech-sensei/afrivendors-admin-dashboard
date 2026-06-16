@@ -58,7 +58,7 @@ const menuItems: MenuItem[] = [
   { id: "analytics", label: "Analytics & Reports", href: "/analytics", icon: BarChart3 },
   { id: "settings", label: "Settings", href: "/settings", icon: Settings },
   { id: "notifications", label: "Notifications", href: "/notifications", icon: Bell },
-  { id: "admin-accounts", label: "Admin Accounts & Roles", href: "/admin-accounts", icon: Shield },
+  { id: "admin-accounts", label: "Admin Accounts & Permissions", href: "/admin-accounts", icon: Shield },
 ]
 
 function getActiveId(pathname: string): string {

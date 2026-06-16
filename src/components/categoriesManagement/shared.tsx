@@ -1,7 +1,6 @@
-import { CheckCircle, Clock, X } from "lucide-react"
+import { X } from "lucide-react"
 import { motion } from "motion/react"
 import { useEffect } from "react"
-import type { Status } from "./data"
 
 export function DrawerFrame({
   title,
@@ -67,36 +66,11 @@ function Header({ title, onClose }: { title: string; onClose: () => void }) {
   )
 }
 
-export function statusBadge(status: Status) {
-  if (status === "Inactive") {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-chart-5/15 px-3 py-1 font-unageo text-xs font-semibold text-chart-5">
-        <Clock className="h-3.5 w-3.5" />
-        Inactive
-      </span>
-    )
-  }
-  return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-chart-2/15 px-3 py-1 font-unageo text-xs font-semibold text-chart-2">
-      <CheckCircle className="h-3.5 w-3.5" />
-      Active
-    </span>
-  )
-}
-
-export function ToggleSwitch({ isActive }: { isActive: boolean }) {
-  return (
-    <div className={`relative h-6 w-11 rounded-full transition ${isActive ? "bg-primary-100" : "bg-accent-40"}`}>
-      <div className={`absolute top-0.75 h-4.5 w-4.5 rounded-full bg-white shadow transition ${isActive ? "left-5.75" : "left-0.75"}`} />
-    </div>
-  )
-}
-
 export function infoRow(label: string, value: React.ReactNode) {
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex items-center justify-between gap-4">
       <span className="font-unageo text-sm text-accent-70">{label}</span>
-      <span className="font-unageo text-sm font-semibold text-secondary-000">{value}</span>
+      <span className="text-right font-unageo text-sm font-semibold text-secondary-000">{value}</span>
     </div>
   )
 }

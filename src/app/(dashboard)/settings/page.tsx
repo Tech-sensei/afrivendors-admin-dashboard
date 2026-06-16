@@ -1,5 +1,5 @@
-import { AdminSectionPage } from "@/components/dashboardLayout/admin-section-page"
+import { SettingsManagement } from "@/components/settingsManagement/settings-management"
 
 export default function SettingsPage() {
-  return <AdminSectionPage sectionId="settings" />
+  return <SettingsManagement />
 }

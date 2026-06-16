@@ -1,24 +1,19 @@
-import { Building2, Package, Tag } from "lucide-react"
+import { Building2, Tag } from "lucide-react"
 
 export function CategoryStats({
   totalCategories,
-  activeCategories,
-  inactiveCategories,
   totalVendors,
-  vendorServicesCount,
+  categoriesWithIcons,
 }: {
   totalCategories: number
-  activeCategories: number
-  inactiveCategories: number
   totalVendors: number
-  vendorServicesCount: number
+  categoriesWithIcons: number
 }) {
   return (
-    <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-      <Card icon={Tag} tone="primary" label="Total Categories" value={String(totalCategories)} sub={`${activeCategories} active`} />
-      <Card icon={Package} tone="info" label="Vendor Services" value={String(vendorServicesCount)} sub="Listed under categories" />
+    <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <Card icon={Tag} tone="primary" label="Total Categories" value={String(totalCategories)} sub="Platform-wide categories" />
       <Card icon={Building2} tone="success" label="Total Vendors" value={String(totalVendors)} sub="Across all categories" />
-      <Card icon={Tag} tone="warning" label="Inactive Categories" value={String(inactiveCategories)} sub="Not available for new listings" />
+      <Card icon={Tag} tone="info" label="With Icons" value={String(categoriesWithIcons)} sub="Categories that have an icon set" />
     </section>
   )
 }
@@ -31,7 +26,7 @@ function Card({
   sub,
 }: {
   icon: React.ComponentType<{ className?: string }>
-  tone: "primary" | "info" | "success" | "warning"
+  tone: "primary" | "info" | "success"
   label: string
   value: string
   sub: string
@@ -41,9 +36,7 @@ function Card({
       ? "text-chart-1 bg-chart-1/15"
       : tone === "success"
         ? "text-chart-2 bg-chart-2/15"
-        : tone === "warning"
-          ? "text-chart-5 bg-chart-5/15"
-          : "text-primary-100 bg-primary-100/15"
+        : "text-primary-100 bg-primary-100/15"
 
   return (
     <article className="rounded-xl border border-border bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">

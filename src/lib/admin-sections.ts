@@ -79,8 +79,8 @@ export const adminSectionCopy: Record<
     description: "Manage platform categories. Vendors create and manage services within these categories.",
   },
   disputes: {
-    title: "Disputes & Support",
-    description: "Resolve disputes and support tickets.",
+    title: "Disputes Management",
+    description: "Review and resolve disputes raised by customers and vendors.",
   },
   analytics: {
     title: "Analytics & Reports",
@@ -88,14 +88,14 @@ export const adminSectionCopy: Record<
   },
   settings: {
     title: "Settings",
-    description: "Global platform and admin settings.",
+    description: "Manage your admin profile, security, and platform commission rates.",
   },
   notifications: {
     title: "Notifications",
     description: "Configure notification templates and delivery.",
   },
   "admin-accounts": {
-    title: "Admin Accounts & Roles",
-    description: "Manage admin users, roles, and permissions.",
+    title: "Admin Accounts & Permissions",
+    description: "Manage admin accounts, roles, and access control.",
   },
 }

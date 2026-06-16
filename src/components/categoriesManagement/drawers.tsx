@@ -1,72 +1,80 @@
-import { AlertTriangle, Clock, Edit2, Plus, Tag } from "lucide-react"
+import { Edit2, Loader2, Plus } from "lucide-react"
 import { useState } from "react"
+import { CATEGORY_ICON_OPTIONS, getCategoryIconComponent } from "@/lib/categoryIcons"
 import type { CategoryItem } from "./data"
-import { DrawerFrame, infoRow, statusBadge, ToggleSwitch } from "./shared"
+import { DrawerFrame, infoRow } from "./shared"
 
 export function CategoryDetailsDrawer({
   category,
+  isLoading,
   onClose,
   onEdit,
-  onToggleStatus,
 }: {
-  category: CategoryItem
+  category: CategoryItem | null
+  isLoading?: boolean
   onClose: () => void
   onEdit: (category: CategoryItem) => void
-  onToggleStatus: (category: CategoryItem) => void
 }) {
+  const Icon = getCategoryIconComponent(category?.iconName)
+
   return (
     <DrawerFrame title="Category Details" onClose={onClose}>
-      <div className="space-y-5 p-5">
-        <Section title={category.name} subtitle={category.id}>
-          {statusBadge(category.status)}
-        </Section>
-        <Block title="Description">
-          <p className="font-unageo text-sm text-secondary-000">{category.description}</p>
-        </Block>
-        <Block title="Category Statistics">
-          {infoRow("Vendor Services", category.serviceCount)}
-          {infoRow("Active Vendors", category.vendorCount)}
-        </Block>
-        <Block title="Timeline">
-          {infoRow("Created", category.createdDate)}
-          {infoRow("Last Updated", category.lastUpdated)}
-        </Block>
-      </div>
-      <Footer>
-        <ActionButton onClick={() => onEdit(category)} tone="primary" icon={<Edit2 className="h-4 w-4" />} label="Edit Category" />
-        <button
-          type="button"
-          onClick={() => onToggleStatus(category)}
-          className={`inline-flex w-full items-center justify-center gap-3 rounded-lg border px-4 py-3 font-unageo text-sm font-semibold ${category.status === "Active" ? "border-chart-5 text-chart-5" : "border-chart-2 text-chart-2"}`}
-        >
-          <ToggleSwitch isActive={category.status === "Active"} />
-          {category.status === "Active" ? "Deactivate Category" : "Activate Category"}
-        </button>
-      </Footer>
+      {isLoading || !category ? (
+        <div className="flex items-center justify-center p-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary-100" />
+        </div>
+      ) : (
+        <>
+          <div className="space-y-5 p-5">
+            <section className="rounded-xl border border-border bg-secondary-800 p-4">
+              <div className="flex items-start gap-4">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary-100/10 text-primary-100">
+                  <Icon className="h-6 w-6" />
+                </span>
+                <div>
+                  <h4 className="font-unbounded text-lg font-semibold text-secondary-000">{category.name}</h4>
+                  <p className="font-unageo text-xs text-accent-70">ID: {category.id}</p>
+                </div>
+              </div>
+            </section>
+            <Block title="Category Information">
+              {infoRow("Icon Name", category.iconName ?? "—")}
+              {infoRow("Vendors", category.vendorCount)}
+            </Block>
+          </div>
+          <Footer>
+            <ActionButton onClick={() => onEdit(category)} tone="primary" icon={<Edit2 className="h-4 w-4" />} label="Edit Category" />
+          </Footer>
+        </>
+      )}
     </DrawerFrame>
   )
 }
 
 export function CategoryFormDrawer({
   category,
+  isSaving,
   onClose,
   onSave,
   isEdit,
 }: {
   category: CategoryItem | null
+  isSaving?: boolean
   onClose: () => void
-  onSave: (data: { name: string; description: string }) => void
+  onSave: (data: { name: string; iconName: string }) => void
   isEdit: boolean
 }) {
   const [name, setName] = useState(category?.name ?? "")
-  const [description, setDescription] = useState(category?.description ?? "")
+  const [iconName, setIconName] = useState(category?.iconName ?? "layout_grid")
+  const PreviewIcon = getCategoryIconComponent(iconName)
+
   return (
     <DrawerFrame title={isEdit ? "Edit Category" : "Add New Category"} onClose={onClose}>
       <form
         className="space-y-5 p-5"
         onSubmit={(event) => {
           event.preventDefault()
-          onSave({ name, description })
+          onSave({ name: name.trim(), iconName: iconName.trim() })
         }}
       >
         <Field label="Category Name *">
@@ -74,79 +82,40 @@ export function CategoryFormDrawer({
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
+            placeholder="e.g. Restaurant"
             className="w-full rounded-lg border border-border bg-white p-3 font-unageo text-sm text-secondary-000 outline-none focus:border-primary-100"
           />
         </Field>
-        <Field label="Description *">
-          <textarea
+        <Field label="Icon *">
+          <div className="mb-2 flex items-center gap-2 rounded-lg border border-border bg-secondary-800/50 px-3 py-2">
+            <PreviewIcon className="h-5 w-5 text-primary-100" />
+            <span className="font-unageo text-sm text-accent-70">Preview</span>
+          </div>
+          <select
             required
-            rows={6}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            value={iconName}
+            onChange={(e) => setIconName(e.target.value)}
             className="w-full rounded-lg border border-border bg-white p-3 font-unageo text-sm text-secondary-000 outline-none focus:border-primary-100"
-          />
+          >
+            {CATEGORY_ICON_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label} ({option.value})
+              </option>
+            ))}
+          </select>
         </Field>
         <Footer>
-          <ActionButton onClick={onClose} tone="outline" label="Cancel" type="button" />
+          <ActionButton onClick={onClose} tone="outline" label="Cancel" type="button" disabled={isSaving} />
           <ActionButton
             tone="primary"
-            label={isEdit ? "Save Changes" : "Create Category"}
+            label={isSaving ? "Saving..." : isEdit ? "Save Changes" : "Create Category"}
             type="submit"
-            icon={isEdit ? <Edit2 className="h-4 w-4" /> : <Tag className="h-4 w-4" />}
+            disabled={isSaving}
+            icon={isEdit ? <Edit2 className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
           />
         </Footer>
       </form>
     </DrawerFrame>
-  )
-}
-
-export function DeactivateCategoryModal({
-  category,
-  onClose,
-  onConfirm,
-}: {
-  category: CategoryItem
-  onClose: () => void
-  onConfirm: () => void
-}) {
-  return (
-    <div
-      className="fixed inset-0 z-1100 flex items-center justify-center bg-secondary-000/50 p-4"
-      onClick={onClose}
-      onKeyDown={(event) => {
-        if (event.key === "Escape") onClose()
-      }}
-      role="presentation"
-    >
-      <div className="w-full max-w-md rounded-xl bg-white p-5 shadow-2xl" onClick={(event) => event.stopPropagation()}>
-        <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-chart-5/15">
-          <AlertTriangle className="h-5 w-5 text-chart-5" />
-        </div>
-        <h4 className="font-unbounded text-lg font-semibold text-secondary-000">Deactivate Category</h4>
-        <p className="mt-2 font-unageo text-sm text-accent-70">
-          Are you sure you want to deactivate &quot;{category.name}&quot;? This affects{" "}
-          <strong>{category.serviceCount} vendor services</strong> in this category.
-        </p>
-        <div className="mt-5 flex gap-2">
-          <ActionButton onClick={onClose} tone="outline" label="Cancel" type="button" />
-          <ActionButton onClick={onConfirm} tone="warning" label="Deactivate Category" type="button" icon={<Clock className="h-4 w-4" />} />
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function Section({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
-  return (
-    <section className="rounded-xl border border-border bg-secondary-800 p-4">
-      <div className="mb-2 flex items-start justify-between gap-2">
-        <div>
-          <h4 className="font-unbounded text-lg font-semibold text-secondary-000">{title}</h4>
-          {subtitle ? <p className="font-unageo text-xs text-accent-70">{subtitle}</p> : null}
-        </div>
-        {children}
-      </div>
-    </section>
   )
 }
 
@@ -178,24 +147,25 @@ function ActionButton({
   label,
   icon,
   type = "button",
+  disabled,
 }: {
   onClick?: () => void
-  tone: "primary" | "outline" | "warning"
+  tone: "primary" | "outline"
   label: string
   icon?: React.ReactNode
   type?: "button" | "submit"
+  disabled?: boolean
 }) {
   const toneClass =
     tone === "primary"
-      ? "border-transparent bg-primary-100 text-white"
-      : tone === "warning"
-        ? "border-transparent bg-chart-5 text-white"
-        : "border-border bg-white text-secondary-000"
+      ? "border-transparent bg-primary-100 text-white disabled:opacity-60"
+      : "border-border bg-white text-secondary-000 disabled:opacity-60"
 
   return (
     <button
       type={type}
       onClick={onClick}
+      disabled={disabled}
       className={`inline-flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-lg border px-3 py-3 font-unageo text-sm font-semibold ${toneClass}`}
     >
       {icon}

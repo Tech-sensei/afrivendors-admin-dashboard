@@ -1,11 +1,12 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { destroyCookie, setCookie } from "nookies"
 import { toast } from "sonner"
+import { getApiErrorMessage } from "@/lib/apiErrors"
 import http, { redirectToSignIn } from "@/lib/http"
 import { adminLoginToProfile } from "@/lib/adminAuthProfile"
 import { clearAuth, setProfile } from "@/store/authSlice"
 import { useAppDispatch } from "@/store/hooks"
-import type { AdminLoginResponse, SignInPayload } from "@/types/auth"
+import type { AdminLoginResponse, ChangePasswordPayload, SignInPayload } from "@/types/auth"
 import {
   APP_AUTH_PORTAL,
   assertLoginAccountTypeOrThrow,
@@ -52,6 +53,19 @@ export const useAuthAPI = () => {
     },
   })
 
+  const changePasswordMutation = useMutation({
+    mutationFn: async (payload: ChangePasswordPayload) => {
+      const response = await http.patch("/auth/password", payload)
+      return response.data
+    },
+    onSuccess: (data: { responseMessage?: string }) => {
+      toast.success(data?.responseMessage || "Password changed successfully")
+    },
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, "Failed to change password"))
+    },
+  })
+
   const logoutMutation = useMutation({
     mutationFn: async () => {
       const response = await http.post("/auth/sign-out")
@@ -83,5 +97,7 @@ export const useAuthAPI = () => {
     signInError: signInMutation.error,
     logoutAsync: logoutMutation.mutateAsync,
     isLoggingOut: logoutMutation.isPending,
+    changePasswordAsync: changePasswordMutation.mutateAsync,
+    isChangingPassword: changePasswordMutation.isPending,
   }
 }
