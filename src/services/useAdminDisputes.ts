@@ -5,7 +5,10 @@ import {
   normalizeDisputeDetail,
   normalizeDisputesList,
 } from "@/lib/mapAdminDispute"
-import type { AdminDisputeResolveAction } from "@/types/admin-disputes"
+import type {
+  AdminDisputeOrderType,
+  AdminDisputeResolveAction,
+} from "@/types/admin-disputes"
 
 export const ADMIN_DISPUTES_LIST_QUERY_KEY = ["admin", "disputes", "list"] as const
 export const ADMIN_DISPUTES_DETAIL_QUERY_KEY = ["admin", "disputes", "detail"] as const
@@ -46,17 +49,49 @@ export function useAdminResolveDispute() {
 
   return useMutation({
     mutationFn: async ({
-      appointmentId,
+      type,
+      orderId,
       resolution,
       action,
     }: {
-      appointmentId: number
+      type: AdminDisputeOrderType
+      orderId: number
       resolution: string
       action: AdminDisputeResolveAction
     }) => {
-      const { data } = await http.post(
-        `/admin/appointments/${appointmentId}/dispute/resolve`,
+      const { data } = await http.patch(
+        `/admin/disputes/${type}/${orderId}/resolve`,
         { resolution, action },
+      )
+      return data
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [...ADMIN_DISPUTES_LIST_QUERY_KEY] })
+      void queryClient.invalidateQueries({ queryKey: [...ADMIN_DISPUTES_DETAIL_QUERY_KEY] })
+    },
+  })
+}
+
+export function useAdminSplitResolveDispute() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      type,
+      orderId,
+      resolution,
+      vendorPercent,
+      clientPercent,
+    }: {
+      type: AdminDisputeOrderType
+      orderId: number
+      resolution: string
+      vendorPercent: number
+      clientPercent: number
+    }) => {
+      const { data } = await http.patch(
+        `/admin/disputes/${type}/${orderId}/resolve/split`,
+        { resolution, vendorPercent, clientPercent },
       )
       return data
     },

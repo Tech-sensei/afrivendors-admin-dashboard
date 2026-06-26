@@ -1,5 +1,5 @@
-import { AdminSectionPage } from "@/components/dashboardLayout/admin-section-page"
+import { redirect } from "next/navigation"
 
-export default function RfsPage() {
-  return <AdminSectionPage sectionId="rfs" />
+export default function RfsRedirectPage() {
+  redirect("/custom-requests")
 }

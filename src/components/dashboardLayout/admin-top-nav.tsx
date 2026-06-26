@@ -17,7 +17,7 @@ export function AdminTopNav({
   onNavigate,
   onOpenNotifications,
   onLogout,
-  unreadNotificationsCount = 5,
+  unreadNotificationsCount = 0,
 }: AdminTopNavProps) {
   const [showNotificationDropdown, setShowNotificationDropdown] = useState(false)
   const [showProfileDropdown, setShowProfileDropdown] = useState(false)
@@ -101,7 +101,7 @@ export function AdminTopNav({
             <Bell className="h-5 w-5 text-accent-80" />
             {unreadNotificationsCount > 0 && (
               <span className="absolute right-1.5 top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-white bg-destructive px-1.5 text-[10px] font-semibold text-white">
-                {unreadNotificationsCount}
+                {unreadNotificationsCount > 99 ? "99+" : unreadNotificationsCount}
               </span>
             )}
           </button>

@@ -46,7 +46,7 @@ const menuItems: MenuItem[] = [
   { id: "payments", label: "Payments & Wallet", href: "/payments", icon: Wallet },
   { id: "payouts", label: "Vendor Payouts", href: "/payouts", icon: DollarSign },
   { id: "reviews", label: "Reviews & Ratings", href: "/reviews", icon: Star },
-  { id: "rfs", label: "RFS Requests", href: "/rfs", icon: FileText, badge: 8 },
+  { id: "custom-requests", label: "Custom Requests", href: "/custom-requests", icon: FileText, badge: 8 },
   { id: "categories", label: "Category Management", href: "/categories", icon: Tag },
   {
     id: "disputes",

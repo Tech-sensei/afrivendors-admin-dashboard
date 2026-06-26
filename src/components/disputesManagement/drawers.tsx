@@ -9,8 +9,9 @@ import {
   Store,
   User,
 } from "lucide-react"
+import type { ComponentType } from "react"
 import { DrawerFrame } from "@/components/bookingsManagement/shared"
-import type { AdminDisputeResolveAction, DisputeItem } from "@/types/admin-disputes"
+import type { AdminDisputeResolveMode, DisputeItem } from "@/types/admin-disputes"
 import {
   disputeStatusBadge,
   escrowStatusBadge,
@@ -21,36 +22,75 @@ import {
 
 const MIN_RESOLUTION = 20
 
+function orderTypeLabel(type: DisputeItem["orderType"]) {
+  return type === "custom_request" ? "Custom request" : "Appointment"
+}
+
+function resolveModeTitle(mode: AdminDisputeResolveMode) {
+  if (mode === "release_funds") return "Release funds to vendor"
+  if (mode === "refund_user") return "Refund customer"
+  return "Split settlement"
+}
+
 export function DisputeDetailsDrawer({
   dispute,
   isLoading,
   isError,
   onRetry,
-  resolveAction,
+  resolveMode,
   resolution,
+  vendorPercent,
+  clientPercent,
   isResolving,
   onClose,
   onStartResolve,
   onCancelResolve,
   onResolutionChange,
+  onVendorPercentChange,
+  onClientPercentChange,
   onConfirmResolve,
 }: {
   dispute: DisputeItem | null
   isLoading?: boolean
   isError?: boolean
   onRetry?: () => void
-  resolveAction: AdminDisputeResolveAction | null
+  resolveMode: AdminDisputeResolveMode | null
   resolution: string
+  vendorPercent: number
+  clientPercent: number
   isResolving: boolean
   onClose: () => void
-  onStartResolve: (action: AdminDisputeResolveAction) => void
+  onStartResolve: (mode: AdminDisputeResolveMode) => void
   onCancelResolve: () => void
   onResolutionChange: (value: string) => void
+  onVendorPercentChange: (value: number) => void
+  onClientPercentChange: (value: number) => void
   onConfirmResolve: () => void
 }) {
   const trimmed = resolution.trim()
   const title = dispute ? dispute.caseId : "Case details"
   const isResolved = dispute?.displayStatus === "Resolved"
+  const splitTotal = vendorPercent + clientPercent
+  const splitValid = splitTotal === 100
+  const vendorShare = dispute ? (dispute.totalAmount * vendorPercent) / 100 : 0
+  const clientShare = dispute ? (dispute.totalAmount * clientPercent) / 100 : 0
+
+  const handleVendorPercentChange = (value: number) => {
+    const next = Math.min(100, Math.max(0, value))
+    onVendorPercentChange(next)
+    onClientPercentChange(100 - next)
+  }
+
+  const handleClientPercentChange = (value: number) => {
+    const next = Math.min(100, Math.max(0, value))
+    onClientPercentChange(next)
+    onVendorPercentChange(100 - next)
+  }
+
+  const canConfirm =
+    trimmed.length >= MIN_RESOLUTION &&
+    (resolveMode !== "split" || splitValid) &&
+    !isResolving
 
   return (
     <DrawerFrame title={title} onClose={onClose}>
@@ -88,6 +128,7 @@ export function DisputeDetailsDrawer({
                 </div>
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
+                {referenceBadge(orderTypeLabel(dispute.orderType))}
                 {referenceBadge(dispute.appointmentLabel)}
                 {referenceBadge(dispute.orderLabel)}
               </div>
@@ -138,8 +179,11 @@ export function DisputeDetailsDrawer({
             </div>
 
             <section className="rounded-xl border border-border p-4">
-              <p className="mb-3 font-unbounded text-sm font-semibold text-secondary-000">Appointment & payment</p>
+              <p className="mb-3 font-unbounded text-sm font-semibold text-secondary-000">
+                {orderTypeLabel(dispute.orderType)} & payment
+              </p>
               <div className="space-y-2.5">
+                <InfoRow icon={Calendar} label="Order" value={dispute.orderTitle} />
                 {dispute.serviceNames.length > 0 ? (
                   <InfoRow icon={Calendar} label="Services" value={dispute.serviceNames.join(", ")} />
                 ) : null}
@@ -154,7 +198,7 @@ export function DisputeDetailsDrawer({
                   label="Payment"
                   value={`${dispute.paymentStatus} · ${dispute.paymentMethod}`}
                 />
-                <InfoRow icon={Calendar} label="Appointment status" value={dispute.appointmentStatus} />
+                <InfoRow icon={Calendar} label="Order status" value={dispute.appointmentStatus} />
               </div>
             </section>
 
@@ -181,11 +225,36 @@ export function DisputeDetailsDrawer({
             </p>
 
             {!isResolved ? (
-              resolveAction ? (
+              resolveMode ? (
                 <section className="space-y-3 rounded-xl border border-border p-4">
                   <p className="font-unbounded text-sm font-semibold text-secondary-000">
-                    {resolveAction === "release_funds" ? "Release funds to vendor" : "Refund customer"}
+                    {resolveModeTitle(resolveMode)}
                   </p>
+
+                  {resolveMode === "split" ? (
+                    <div className="space-y-3 rounded-lg border border-border bg-secondary-800/40 p-3">
+                      <PercentField
+                        label="Vendor share"
+                        value={vendorPercent}
+                        amount={vendorShare}
+                        onChange={handleVendorPercentChange}
+                      />
+                      <PercentField
+                        label="Customer refund"
+                        value={clientPercent}
+                        amount={clientShare}
+                        onChange={handleClientPercentChange}
+                      />
+                      <p
+                        className={`font-unageo text-xs ${splitValid ? "text-accent-70" : "text-destructive"}`}
+                      >
+                        {splitValid
+                          ? `Total escrow ${formatDisputeMoney(dispute.totalAmount)} split between both parties.`
+                          : `Percentages must add up to 100% (currently ${splitTotal}%).`}
+                      </p>
+                    </div>
+                  ) : null}
+
                   <textarea
                     value={resolution}
                     onChange={(e) => onResolutionChange(e.target.value)}
@@ -196,7 +265,7 @@ export function DisputeDetailsDrawer({
                   <div className="flex gap-2">
                     <button
                       type="button"
-                      disabled={isResolving || trimmed.length < MIN_RESOLUTION}
+                      disabled={!canConfirm}
                       onClick={onConfirmResolve}
                       className="flex-1 rounded-lg bg-primary-100 py-2.5 font-unageo text-sm font-semibold text-white disabled:opacity-50"
                     >
@@ -212,20 +281,29 @@ export function DisputeDetailsDrawer({
                   </div>
                 </section>
               ) : (
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-3">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <button
+                      type="button"
+                      onClick={() => onStartResolve("release_funds")}
+                      className="rounded-lg bg-primary-100 py-3 font-unageo text-sm font-semibold text-white hover:bg-primary-100/90"
+                    >
+                      Pay vendor
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onStartResolve("refund_user")}
+                      className="rounded-lg border border-destructive/30 bg-destructive/5 py-3 font-unageo text-sm font-semibold text-destructive hover:bg-destructive/10"
+                    >
+                      Refund customer
+                    </button>
+                  </div>
                   <button
                     type="button"
-                    onClick={() => onStartResolve("release_funds")}
-                    className="rounded-lg bg-primary-100 py-3 font-unageo text-sm font-semibold text-white hover:bg-primary-100/90"
+                    onClick={() => onStartResolve("split")}
+                    className="rounded-lg border border-chart-1/30 bg-chart-1/8 py-3 font-unageo text-sm font-semibold text-chart-1 hover:bg-chart-1/12"
                   >
-                    Pay vendor
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onStartResolve("refund")}
-                    className="rounded-lg border border-destructive/30 bg-destructive/5 py-3 font-unageo text-sm font-semibold text-destructive hover:bg-destructive/10"
-                  >
-                    Refund customer
+                    Split settlement
                   </button>
                 </div>
               )
@@ -237,6 +315,46 @@ export function DisputeDetailsDrawer({
   )
 }
 
+function PercentField({
+  label,
+  value,
+  amount,
+  onChange,
+}: {
+  label: string
+  value: number
+  amount: number
+  onChange: (value: number) => void
+}) {
+  return (
+    <label className="block">
+      <div className="mb-1 flex items-center justify-between gap-3">
+        <span className="font-unageo text-sm font-semibold text-secondary-000">{label}</span>
+        <span className="font-unageo text-sm text-accent-70">{formatDisputeMoney(amount)}</span>
+      </div>
+      <div className="flex items-center gap-3">
+        <input
+          type="range"
+          min={0}
+          max={100}
+          value={value}
+          onChange={(e) => onChange(Number(e.target.value))}
+          className="flex-1 accent-primary-100"
+        />
+        <input
+          type="number"
+          min={0}
+          max={100}
+          value={value}
+          onChange={(e) => onChange(Number(e.target.value))}
+          className="w-16 rounded-lg border border-border px-2 py-1.5 text-center font-unageo text-sm outline-none focus:border-primary-100"
+        />
+        <span className="font-unageo text-sm text-accent-70">%</span>
+      </div>
+    </label>
+  )
+}
+
 function PartyCard({
   icon: Icon,
   label,
@@ -244,7 +362,7 @@ function PartyCard({
   email,
   extra,
 }: {
-  icon: React.ComponentType<{ className?: string }>
+  icon: ComponentType<{ className?: string }>
   label: string
   name: string
   email: string
@@ -270,7 +388,7 @@ function InfoRow({
   label,
   value,
 }: {
-  icon: React.ComponentType<{ className?: string }>
+  icon: ComponentType<{ className?: string }>
   label: string
   value: string
 }) {

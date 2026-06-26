@@ -9,7 +9,7 @@ export const adminSectionIds = [
   "payments",
   "payouts",
   "reviews",
-  "rfs",
+  "custom-requests",
   "categories",
   "disputes",
   "analytics",
@@ -70,9 +70,9 @@ export const adminSectionCopy: Record<
     title: "Reviews & Ratings",
     description: "Moderate reviews and ratings on the platform.",
   },
-  rfs: {
-    title: "RFS Requests",
-    description: "Handle request-for-service workflows.",
+  "custom-requests": {
+    title: "Custom Requests",
+    description: "Monitor and manage custom request workflows across the platform.",
   },
   categories: {
     title: "Category Management",
@@ -92,7 +92,7 @@ export const adminSectionCopy: Record<
   },
   notifications: {
     title: "Notifications",
-    description: "Configure notification templates and delivery.",
+    description: "Platform alerts and admin activity updates.",
   },
   "admin-accounts": {
     title: "Admin Accounts & Permissions",

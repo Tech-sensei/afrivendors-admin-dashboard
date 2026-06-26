@@ -11,25 +11,36 @@ export type AdminDisputeServiceApi = {
   name?: string
 }
 
-export type AdminDisputeAppointmentSnapshotApi = {
+/** GET /admin/disputes item */
+export type AdminDisputeOrderType = "appointment" | "custom_request"
+
+export type AdminDisputeOrderSnapshotApi = {
   id: number
   status: string
   paymentStatus: string
   paymentMethod: string
-  totalAmount: number
-  date: string
-  time: string
-  customerName: string
-  customerPhone: string
-  customerEmail: string
+  totalAmount?: number
+  agreedAmount?: number
+  budget?: number
+  date?: string
+  time?: string
+  customerName?: string
+  customerPhone?: string
+  customerEmail?: string
   vendor: AdminDisputePartyApi
   user: AdminDisputePartyApi
   services?: AdminDisputeServiceApi[]
+  requestTitle?: string
+  title?: string
 }
 
-/** GET /admin/disputes item */
+/** @deprecated use AdminDisputeOrderSnapshotApi */
+export type AdminDisputeAppointmentSnapshotApi = AdminDisputeOrderSnapshotApi
+
 export type AdminDisputeApi = {
   id: number
+  type?: AdminDisputeOrderType
+  orderId?: number
   reason: string
   resolution: string | null
   status: string
@@ -40,7 +51,8 @@ export type AdminDisputeApi = {
   escalatedAt: string | null
   createdAt: string
   updatedAt: string
-  appointment: AdminDisputeAppointmentSnapshotApi
+  appointment?: AdminDisputeOrderSnapshotApi
+  customRequest?: AdminDisputeOrderSnapshotApi
 }
 
 export type AdminDisputesListMeta = {
@@ -55,7 +67,9 @@ export type AdminDisputesListResponse = {
   meta: AdminDisputesListMeta
 }
 
-export type AdminDisputeResolveAction = "release_funds" | "refund"
+export type AdminDisputeResolveAction = "release_funds" | "refund_user"
+
+export type AdminDisputeResolveMode = AdminDisputeResolveAction | "split"
 
 export type DisputeDisplayStatus = "Open" | "Under Review" | "Escalated" | "Resolved"
 
@@ -71,6 +85,9 @@ export type DisputeStats = {
 export type DisputeItem = {
   id: number
   caseId: string
+  orderType: AdminDisputeOrderType
+  orderId: number
+  orderTitle: string
   reason: string
   resolution: string | null
   displayStatus: DisputeDisplayStatus

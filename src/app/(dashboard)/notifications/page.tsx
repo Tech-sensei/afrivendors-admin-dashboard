@@ -1,5 +1,5 @@
-import { AdminSectionPage } from "@/components/dashboardLayout/admin-section-page"
+import { NotificationsManagement } from "@/components/notifications/notifications-management"
 
 export default function NotificationsPage() {
-  return <AdminSectionPage sectionId="notifications" />
+  return <NotificationsManagement />
 }

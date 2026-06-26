@@ -1,5 +1,7 @@
 import type {
   AdminDisputeApi,
+  AdminDisputeOrderSnapshotApi,
+  AdminDisputeOrderType,
   AdminDisputesListResponse,
   DisputeDisplayStatus,
   DisputeItem,
@@ -8,6 +10,25 @@ import type {
 
 function padId(prefix: string, id: number, length: number) {
   return `${prefix}-${String(id).padStart(length, "0")}`
+}
+
+function getDisputeSnapshot(dispute: AdminDisputeApi): AdminDisputeOrderSnapshotApi | null {
+  return dispute.appointment ?? dispute.customRequest ?? null
+}
+
+function getDisputeOrderType(dispute: AdminDisputeApi): AdminDisputeOrderType {
+  if (dispute.type === "custom_request" || dispute.type === "appointment") {
+    return dispute.type
+  }
+  return dispute.customRequest ? "custom_request" : "appointment"
+}
+
+function getDisputeOrderId(dispute: AdminDisputeApi, snapshot: AdminDisputeOrderSnapshotApi): number {
+  return dispute.orderId ?? snapshot.id
+}
+
+function getSnapshotAmount(snapshot: AdminDisputeOrderSnapshotApi): number {
+  return Number(snapshot.totalAmount ?? snapshot.agreedAmount ?? snapshot.budget ?? 0)
 }
 
 export function getDisputeDisplayStatus(dispute: AdminDisputeApi): DisputeDisplayStatus {
@@ -21,7 +42,8 @@ export function getDisputeDisplayStatus(dispute: AdminDisputeApi): DisputeDispla
 export function isDisputeEscrowFrozen(dispute: AdminDisputeApi): boolean {
   const status = dispute.status.toLowerCase()
   if (status === "resolved" || status === "closed") return false
-  const paymentStatus = dispute.appointment.paymentStatus?.toLowerCase() ?? ""
+  const snapshot = getDisputeSnapshot(dispute)
+  const paymentStatus = snapshot?.paymentStatus?.toLowerCase() ?? ""
   return paymentStatus === "paid" || paymentStatus === "pending" || paymentStatus === "held"
 }
 
@@ -41,42 +63,60 @@ export function formatDisputeDate(value: string) {
 }
 
 export function mapAdminDisputeApiToItem(dispute: AdminDisputeApi): DisputeItem {
+  const snapshot = getDisputeSnapshot(dispute)
+  if (!snapshot) {
+    throw new Error("Dispute is missing order snapshot")
+  }
+
+  const orderType = getDisputeOrderType(dispute)
+  const orderId = getDisputeOrderId(dispute, snapshot)
+  const orderPrefix = orderType === "custom_request" ? "CR" : "APT"
+  const orderLabelPrefix = orderType === "custom_request" ? "CR" : "ORD"
+
   const customerName =
-    dispute.appointment.customerName ||
-    `${dispute.appointment.user.firstName} ${dispute.appointment.user.lastName}`.trim()
+    snapshot.customerName ||
+    `${snapshot.user.firstName} ${snapshot.user.lastName}`.trim()
 
   const vendorName =
-    `${dispute.appointment.vendor.firstName} ${dispute.appointment.vendor.lastName}`.trim()
+    `${snapshot.vendor.firstName} ${snapshot.vendor.lastName}`.trim()
 
   const serviceNames =
-    dispute.appointment.services?.map(
+    snapshot.services?.map(
       (service) => service.serviceName ?? service.name ?? `Service #${service.id}`,
     ) ?? []
+
+  const orderTitle =
+    snapshot.requestTitle?.trim() ||
+    snapshot.title?.trim() ||
+    (serviceNames.length > 0 ? serviceNames.join(", ") : `${orderType === "custom_request" ? "Custom request" : "Appointment"} #${orderId}`)
 
   return {
     id: dispute.id,
     caseId: padId("DSP", dispute.id, 3),
+    orderType,
+    orderId,
+    orderTitle,
     reason: dispute.reason,
     resolution: dispute.resolution,
     displayStatus: getDisputeDisplayStatus(dispute),
     apiStatus: dispute.status,
     customerName,
     customerInitials: getCustomerInitials(customerName),
-    customerEmail: dispute.appointment.customerEmail || dispute.appointment.user.email,
+    customerEmail: snapshot.customerEmail || snapshot.user.email,
     vendorName,
-    vendorEmail: dispute.appointment.vendor.email,
-    appointmentId: dispute.appointment.id,
-    appointmentLabel: padId("APT", dispute.appointment.id, 4),
-    orderLabel: padId("ORD", dispute.appointment.id, 4),
+    vendorEmail: snapshot.vendor.email,
+    appointmentId: orderId,
+    appointmentLabel: padId(orderPrefix, orderId, 4),
+    orderLabel: padId(orderLabelPrefix, orderId, 4),
     escrowFrozen: isDisputeEscrowFrozen(dispute),
     dateRaised: formatDisputeDate(dispute.createdAt),
-    paymentStatus: dispute.appointment.paymentStatus,
-    paymentMethod: dispute.appointment.paymentMethod,
-    totalAmount: dispute.appointment.totalAmount,
-    appointmentDate: dispute.appointment.date,
-    appointmentTime: dispute.appointment.time,
-    appointmentStatus: dispute.appointment.status,
-    customerPhone: dispute.appointment.customerPhone,
+    paymentStatus: snapshot.paymentStatus,
+    paymentMethod: snapshot.paymentMethod,
+    totalAmount: getSnapshotAmount(snapshot),
+    appointmentDate: snapshot.date ?? "—",
+    appointmentTime: snapshot.time ?? "—",
+    appointmentStatus: snapshot.status,
+    customerPhone: snapshot.customerPhone ?? "—",
     serviceNames,
     resolvedAt: dispute.resolvedAt,
     resolvedBy: dispute.resolvedBy,
@@ -104,7 +144,9 @@ export function normalizeDisputeDetail(payload: unknown): AdminDisputeApi | null
       ? (p.data as Record<string, unknown>)
       : p
   if (typeof inner.id !== "number") return null
-  if (!inner.appointment || typeof inner.appointment !== "object") return null
+  const hasAppointment = inner.appointment && typeof inner.appointment === "object"
+  const hasCustomRequest = inner.customRequest && typeof inner.customRequest === "object"
+  if (!hasAppointment && !hasCustomRequest) return null
   return inner as AdminDisputeApi
 }
 

@@ -43,7 +43,7 @@ export function DisputesTable({
         cell: ({ row }) => (
           <div>
             <p className="font-unageo text-sm font-semibold text-secondary-000">{row.original.caseId}</p>
-            <p className="mt-0.5 font-unageo text-xs text-accent-70">{row.original.appointmentLabel}</p>
+            <p className="mt-0.5 font-unageo text-xs text-accent-70">{row.original.orderTitle}</p>
           </div>
         ),
       },

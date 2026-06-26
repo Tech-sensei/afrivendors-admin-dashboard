@@ -273,7 +273,7 @@ export const kpiCards: KpiCard[] = [
   { label: "Total Vendors", value: "1,247", change: "+12%", trend: "up", icon: Store, tone: "primary" },
   { label: "Total Customers", value: "8,932", change: "+18%", trend: "up", icon: Users, tone: "chart2" },
   { label: "Total Appointments", value: "3,456", change: "+8%", trend: "up", icon: Calendar, tone: "chart5" },
-  { label: "Pending RFS", value: "23", change: "-5%", trend: "down", icon: FileText, tone: "destructive" },
+  { label: "Pending custom requests", value: "23", change: "-5%", trend: "down", icon: FileText, tone: "destructive" },
   { label: "Total Revenue", value: "$348,500", change: "+15%", trend: "up", icon: DollarSign, tone: "primary" },
   { label: "Total Payouts", value: "$264,200", change: "+10%", trend: "up", icon: Wallet, tone: "chart2" },
 ]
