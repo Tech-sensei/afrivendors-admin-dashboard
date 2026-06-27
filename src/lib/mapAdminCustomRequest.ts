@@ -36,6 +36,16 @@ function getCustomerId(api: AdminCustomRequestApiItem): string {
   return id != null ? String(id) : "—"
 }
 
+function getCustomerUserId(api: AdminCustomRequestApiItem): number | null {
+  const id = api.user?.id ?? api.customer?.id
+  return id != null ? Number(id) : null
+}
+
+function getVendorUserId(api: AdminCustomRequestApiItem): number | null {
+  const id = api.vendor?.id
+  return id != null ? Number(id) : null
+}
+
 function getVendorName(api: AdminCustomRequestApiItem): string {
   const vendor = api.vendor
   if (vendor) {
@@ -152,9 +162,11 @@ export function mapAdminCustomRequestApiToRfsRequest(
     category: getCategoryName(api),
     customerName: getCustomerName(api),
     customerId: getCustomerId(api),
+    customerUserId: getCustomerUserId(api),
     customerEmail: getCustomerEmail(api),
     vendorName: getVendorName(api),
     vendorId: getVendorId(api),
+    vendorUserId: getVendorUserId(api),
     vendorEmail: getVendorEmail(api),
     budget,
     agreedAmount,

@@ -5,7 +5,7 @@ import {
   FileText,
   Mail,
   MapPin,
-  MessageSquare,
+  MessageCircle,
   Store,
   Tag,
   User,
@@ -26,12 +26,16 @@ export function RfsDetailsDrawer({
   onClose,
   onContactCustomer,
   onContactVendor,
+  onMessageCustomer,
+  onMessageVendor,
 }: {
   request: RfsRequest
   isLoading?: boolean
   onClose: () => void
   onContactCustomer: (email: string) => void
   onContactVendor: (email: string) => void
+  onMessageCustomer: (request: RfsRequest) => void
+  onMessageVendor: (request: RfsRequest) => void
 }) {
   const acceptedQuote = request.acceptedQuote
   const agreedLabel = request.agreedAmount > 0 ? formatMoney(request.agreedAmount) : "—"
@@ -72,14 +76,25 @@ export function RfsDetailsDrawer({
         <DetailSection title="Customer Information">
           <Info icon={User} label="Name" value={request.customerName} />
           <Info icon={Mail} label="Email" value={request.customerEmail} />
-          <button
-            type="button"
-            onClick={() => onContactCustomer(request.customerEmail)}
-            className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 font-unageo text-sm font-semibold text-secondary-000 hover:bg-white"
-          >
-            <MessageSquare className="h-4 w-4" />
-            Contact Customer
-          </button>
+          <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={() => onMessageCustomer(request)}
+              disabled={request.customerUserId == null}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary-100 px-4 py-2.5 font-unageo text-sm font-semibold text-white hover:bg-primary-100/90 disabled:opacity-50"
+            >
+              <MessageCircle className="h-4 w-4" />
+              Message
+            </button>
+            <button
+              type="button"
+              onClick={() => onContactCustomer(request.customerEmail)}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 font-unageo text-sm font-semibold text-secondary-000 hover:bg-white"
+            >
+              <Mail className="h-4 w-4" />
+              Email
+            </button>
+          </div>
         </DetailSection>
 
         {request.vendorName !== "—" ? (
@@ -89,15 +104,28 @@ export function RfsDetailsDrawer({
             {request.vendorEmail !== "—" ? (
               <Info icon={Mail} label="Email" value={request.vendorEmail} />
             ) : null}
-            {request.vendorEmail !== "—" ? (
-              <button
-                type="button"
-                onClick={() => onContactVendor(request.vendorEmail)}
-                className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 font-unageo text-sm font-semibold text-secondary-000 hover:bg-white"
-              >
-                <MessageSquare className="h-4 w-4" />
-                Contact Vendor
-              </button>
+            {request.vendorName !== "—" ? (
+              <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() => onMessageVendor(request)}
+                  disabled={request.vendorUserId == null}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary-100 px-4 py-2.5 font-unageo text-sm font-semibold text-white hover:bg-primary-100/90 disabled:opacity-50"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  Message
+                </button>
+                {request.vendorEmail !== "—" ? (
+                  <button
+                    type="button"
+                    onClick={() => onContactVendor(request.vendorEmail)}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 font-unageo text-sm font-semibold text-secondary-000 hover:bg-white"
+                  >
+                    <Mail className="h-4 w-4" />
+                    Email
+                  </button>
+                ) : null}
+              </div>
             ) : null}
           </DetailSection>
         ) : null}

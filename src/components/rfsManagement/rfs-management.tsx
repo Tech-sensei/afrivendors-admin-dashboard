@@ -2,6 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import {
+  AdminCustomRequestMessageDrawer,
+  type AdminMessageTarget,
+} from "@/components/messages/AdminCustomRequestMessageDrawer";
 import { RfsDetailsDrawer } from "./drawers";
 import { RfsFilters, type RfsStatusFilter } from "./filters";
 import { RfsStats } from "./stats";
@@ -36,6 +40,8 @@ export function RfsManagement() {
   const [statusFilter, setStatusFilter] = useState<RfsStatusFilter>("All");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedRequest, setSelectedRequest] = useState<RfsRequest | null>(null);
+  const [messageTarget, setMessageTarget] = useState<AdminMessageTarget | null>(null);
+  const [messageRequest, setMessageRequest] = useState<RfsRequest | null>(null);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -93,6 +99,16 @@ export function RfsManagement() {
     });
   };
 
+  const openMessageDrawer = (request: RfsRequest, target: AdminMessageTarget) => {
+    setMessageRequest(request);
+    setMessageTarget(target);
+  };
+
+  const closeMessageDrawer = () => {
+    setMessageTarget(null);
+    setMessageRequest(null);
+  };
+
   const selectedLive = selectedDetail ?? selectedRequest;
 
   return (
@@ -132,8 +148,17 @@ export function RfsManagement() {
           onClose={() => setSelectedRequest(null)}
           onContactCustomer={handleContactCustomer}
           onContactVendor={handleContactVendor}
+          onMessageCustomer={(request) => openMessageDrawer(request, "customer")}
+          onMessageVendor={(request) => openMessageDrawer(request, "vendor")}
         />
       ) : null}
+
+      <AdminCustomRequestMessageDrawer
+        request={messageRequest}
+        target={messageTarget}
+        isOpen={messageTarget != null && messageRequest != null}
+        onClose={closeMessageDrawer}
+      />
     </div>
   );
 }

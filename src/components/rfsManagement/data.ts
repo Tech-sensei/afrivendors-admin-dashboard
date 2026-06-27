@@ -38,9 +38,11 @@ export interface RfsRequest {
   category: string
   customerName: string
   customerId: string
+  customerUserId: number | null
   customerEmail: string
   vendorName: string
   vendorId: string
+  vendorUserId: number | null
   vendorEmail: string
   budget: number
   agreedAmount: number
